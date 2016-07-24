@@ -12,3 +12,8 @@ commands:
       usage: /im
       permission: immortalized.im
       permission-message: You don't have <permission>
+   imjoin:
+      description: .
+      usage: /imjoin
+      permission: immortalized.imjoin
+      permission-message: You don't have <permission>

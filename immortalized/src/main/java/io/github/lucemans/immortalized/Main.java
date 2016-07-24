@@ -10,6 +10,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
+import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -18,9 +19,10 @@ import org.bukkit.potion.PotionEffectType;
 
 public final class Main extends JavaPlugin implements Listener {
 	
-	public int state = 1; //LOBBY;
+	public int state = 0; //LOBBY;
 	//public UIManager ui; //COMMENTED OUT FOR NOW
 	public ArrayList<Player> IngameUsers = new ArrayList<Player>();
+	public ArrayList<Player> ReadyUsers = new ArrayList<Player>();
 	
     @Override
     public void onEnable() {
@@ -48,9 +50,18 @@ public final class Main extends JavaPlugin implements Listener {
     			player.setGlowing(true);
     			player.setSaturation(9.5f);
     			
-    			if (state == 2){//IF INGAME
+    			if (state == 20){//IF INGAME FINISH
     				if (player.getLocation().getBlockX() >= 125 && player.getLocation().getBlockX() <= 127) {
     					player.teleport(new Location(player.getWorld(), 130, 123, -2));
+    				}
+    			}
+    			
+    			if (state == 1){
+    				if (IngameUsers.size() == ReadyUsers.size()){
+    					state = 2;
+    	    			for(Player target : Bukkit.getServer().getOnlinePlayers()) {
+    	    					target.teleport(new Location(Bukkit.getWorld("ImmoParkour"), 1, 226, -1, 90, 2));
+    	    			}
     				}
     			}
     			
@@ -69,6 +80,19 @@ public final class Main extends JavaPlugin implements Listener {
 		
 	}
     
+    @EventHandler
+    public void onPlayerJoin(PlayerJoinEvent event){
+    	if (state == 1){
+    		if (!event.getPlayer().getWorld().getName().equals("ImmoLobby")){
+    			event.getPlayer().teleport(new Location(Bukkit.getWorld("ImmoLobby"),0, 65, 0, 0, 0));
+    		}
+    	}
+    	if (state == 0){
+    		if (!event.getPlayer().getWorld().getName().equals("Lobby")){
+    			event.getPlayer().teleport(new Location(Bukkit.getWorld("Lobby"),0, 65, 0, 0, 0));
+    		}
+    	}
+    }
     
     @EventHandler
     public void onEntityDamage(EntityDamageEvent event) {
@@ -119,22 +143,31 @@ public final class Main extends JavaPlugin implements Listener {
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args){    	
     	getLogger().info("CMD");
     	
-    	//IM
-    	if (cmd.getName().equalsIgnoreCase("im")) {
-    		//SOMETHING WITH GUIS
-    		if (state == 1){
-    			state = 2;
+    	//IMjoin
+    	if (cmd.getName().equalsIgnoreCase("imjoin")) {
+    		if (state == 0){
+    			state = 1;
     			for(Player player : Bukkit.getServer().getOnlinePlayers()) {
-    				if (player.getWorld().getName().equals("ImmoLobby")){
+    				if (player.getWorld().getName().equals("Lobby")){
     					IngameUsers.add(player);
-    					if (player.getName().equals("MrDisk")){
-    					player.teleport(new Location( Bukkit.getWorld("ImmoParkour"), 1, 226, -1, 90.8f, 1.5f));
-    					}
+    					player.teleport(new Location(Bukkit.getWorld("ImmoLobby"),0, 65, 0, 0, 0));
+    					getLogger().info("Teleporting players to Lobby");
+    					player.sendMessage("You Joined Immortualize. Type /im if you are ready");
     				}
     			}
+    		return true;
     		}
     		//HelloWorldMenu menu = new HelloWorldMenu(this);
     		//ui.showMenu((Player) sender, menu);
+    	}
+    	
+    	if (cmd.getName().equalsIgnoreCase("im")){
+    		if (!ReadyUsers.contains((Player) sender)){
+    			ReadyUsers.add((Player) sender);
+    			Bukkit.broadcastMessage(IngameUsers.size() - ReadyUsers.size() + " more user need to become ready");
+    			return true;
+    		}
+    		return true;
     	}
     	
     	//IMR
