@@ -111,6 +111,11 @@ public final class Main extends JavaPlugin implements Listener {
     		//SOMETHING WITH GUIS
     		if (state == 1){
     			state = 2;
+    			for(Player player : Bukkit.getServer().getOnlinePlayers()) {
+    				if (player.getWorld().getName().equals("ImmoLobby")){
+    					
+    				}
+    			}
     		}
     		//HelloWorldMenu menu = new HelloWorldMenu(this);
     		//ui.showMenu((Player) sender, menu);
