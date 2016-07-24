@@ -20,7 +20,7 @@ import io.github.lucemans.ui.UIManager;
 public final class Main extends JavaPlugin implements Listener {
 	
 	public int state = 1; //LOBBY;
-	//public UIManager ui;
+	//public UIManager ui; //COMMENTED OUT FOR NOW
 	
     @Override
     public void onEnable() {
