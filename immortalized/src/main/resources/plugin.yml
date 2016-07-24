@@ -1,0 +1,14 @@
+name: Immortalized
+main: io.github.lucemans.immortalized.Main
+version: 0.1
+commands:
+   imr:
+      description: .
+      usage: /imr [player] [cause]
+      permission: immortalized.imr
+      permission-message: You don't have <permission>
+   im:
+      description: .
+      usage: /im
+      permission: immortalized.im
+      permission-message: You don't have <permission>
