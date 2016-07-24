@@ -1,4 +1,6 @@
 package io.github.lucemans.immortalized;
+import java.util.ArrayList;
+
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.command.Command;
@@ -14,13 +16,11 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
-import io.github.lucemans.ui.HelloWorldMenu;
-import io.github.lucemans.ui.UIManager;
-
 public final class Main extends JavaPlugin implements Listener {
 	
 	public int state = 1; //LOBBY;
 	//public UIManager ui; //COMMENTED OUT FOR NOW
+	public ArrayList<Player> IngameUsers = new ArrayList<Player>();
 	
     @Override
     public void onEnable() {
@@ -39,6 +39,7 @@ public final class Main extends JavaPlugin implements Listener {
     }
     
     protected void tickMethod() {
+    	int i = 0;
     	for(Player player : Bukkit.getServer().getOnlinePlayers()) {
     		//if(player.getWorld().getName() == "ImmoParkour") { //TODO replace world vert. with game status check
     			//player.removePotionEffect(PotionEffectType.NIGHT_VISION);
@@ -47,11 +48,23 @@ public final class Main extends JavaPlugin implements Listener {
     			player.setGlowing(true);
     			player.setSaturation(9.5f);
     			
-    			if (state == 2){
+    			if (state == 2){//IF INGAME
     				if (player.getLocation().getBlockX() >= 125 && player.getLocation().getBlockX() <= 127) {
     					player.teleport(new Location(player.getWorld(), 130, 123, -2));
     				}
     			}
+    			
+    			if (state == 2){
+    				if (player.getWorld().getName().equals("ImmoParkour")){
+    					i += 1;
+    				}
+    			}
+    	}
+    	if (state == 2){
+    		if (i == IngameUsers.size()){
+    			state = 3;
+    			getLogger().info("DONE");
+    		}
     	}
 		
 	}
@@ -113,7 +126,10 @@ public final class Main extends JavaPlugin implements Listener {
     			state = 2;
     			for(Player player : Bukkit.getServer().getOnlinePlayers()) {
     				if (player.getWorld().getName().equals("ImmoLobby")){
-    					
+    					IngameUsers.add(player);
+    					if (player.getName().equals("MrDisk")){
+    					player.teleport(new Location( Bukkit.getWorld("ImmoParkour"), 1, 226, -1, 90.8f, 1.5f));
+    					}
     				}
     			}
     		}
