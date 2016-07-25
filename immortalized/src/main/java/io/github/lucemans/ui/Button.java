@@ -9,7 +9,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.scheduler.BukkitRunnable;
 
-import io.github.lucemans.immortalized.Main;
+import io.github.lucemans.main.Main;
 
 public class Button
 {

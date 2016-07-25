@@ -2,7 +2,7 @@ package io.github.lucemans.ui;
 
 import org.bukkit.Material;
 
-import io.github.lucemans.immortalized.Main;
+import io.github.lucemans.main.Main;
 
 public class HelloWorldMenu extends Menu
 {
