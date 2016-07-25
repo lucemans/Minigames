@@ -1,5 +1,5 @@
-name: Immortalized
-main: io.github.lucemans.immortalized.Main
+name: Minigames
+main: io.github.lucemans.main.Main
 version: 0.1
 commands:
    imr:
