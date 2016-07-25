@@ -48,6 +48,7 @@ public final class Main extends JavaPlugin implements Listener {
     }
     
     protected void tickMethod() {
+    	if (state > 0){
     	int i = 0;
     	for(Player player : Bukkit.getServer().getOnlinePlayers()) {
     		//if(player.getWorld().getName() == "ImmoParkour") { //TODO replace world vert. with game status check
@@ -114,6 +115,7 @@ public final class Main extends JavaPlugin implements Listener {
     			getLogger().info("All players Succesfully Arived");
     		}
     	}
+    	}
 		
 	}
     
@@ -124,15 +126,11 @@ public final class Main extends JavaPlugin implements Listener {
     			event.getPlayer().teleport(new Location(Bukkit.getWorld("ImmoLobby"),0, 65, 0, 0, 0));
     		}
     	}
-    	if (state == 0){
-    		if (!event.getPlayer().getWorld().getName().equals("Lobby")){
-    			event.getPlayer().teleport(new Location(Bukkit.getWorld("Lobby"),0, 65, 0, 0, 0));
-    		}
-    	}
     }
     
     @EventHandler
     public void onEntityDamage(EntityDamageEvent event) {
+    	if (state > 0) {
     	DamageCause cause = event.getCause();
     	if (event.getEntity() instanceof Player) {
     		Player player = (Player) event.getEntity();
@@ -169,11 +167,14 @@ public final class Main extends JavaPlugin implements Listener {
     			}
     		}
     	}
+    	}
     }
     
     @EventHandler
     public void onPlayerDeath(PlayerDeathEvent event) {
+    	if (state > 0) {
     	event.setDeathMessage("");
+    	}
     }
     
     @Override
