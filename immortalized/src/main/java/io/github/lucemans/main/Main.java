@@ -8,7 +8,7 @@ public final class Main extends JavaPlugin implements Listener
 	@Override
     public void onEnable()
     {
-    	//LAAT HET AUB WERKEN
+    	//iets anders
     }
 	
 	@Override
