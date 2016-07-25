@@ -6,6 +6,7 @@ import org.bukkit.DyeColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
+import org.bukkit.WorldCreator;
 import org.bukkit.block.Block;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -120,15 +121,6 @@ public final class Main extends JavaPlugin implements Listener {
 	}
     
     @EventHandler
-    public void onPlayerJoin(PlayerJoinEvent event){
-    	if (state == 1){
-    		if (!event.getPlayer().getWorld().getName().equals("ImmoLobby")){
-    			event.getPlayer().teleport(new Location(Bukkit.getWorld("ImmoLobby"),0, 65, 0, 0, 0));
-    		}
-    	}
-    }
-    
-    @EventHandler
     public void onEntityDamage(EntityDamageEvent event) {
     	if (state > 0) {
     	DamageCause cause = event.getCause();
@@ -181,6 +173,10 @@ public final class Main extends JavaPlugin implements Listener {
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args){    	
     	getLogger().info("CMD");
     	
+    	if (cmd.getName().equalsIgnoreCase("imcreateworld")) {
+    		World world = Bukkit.createWorld(new WorldCreator("im"));
+    		((Player) sender).teleport(world.getSpawnLocation());
+    	}
     	//IMjoin
     	if (cmd.getName().equalsIgnoreCase("imjoin")) {
     		if (state == 0){
