@@ -17,3 +17,8 @@ commands:
       usage: /imjoin
       permission: immortalized.imjoin
       permission-message: You don't have <permission>
+   imcreateworld:
+      description: .
+      usage: /imjoin
+      permission: immortalized.imjoin
+      permission-message: You don't have <permission>
