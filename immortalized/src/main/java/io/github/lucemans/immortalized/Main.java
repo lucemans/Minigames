@@ -35,6 +35,8 @@ public final class Main implements Listener {
 	
 	public static io.github.lucemans.main.Main main;
 	
+	public int time_left = 0;
+	
     public Main(io.github.lucemans.main.Main plugin) {
     	
     	main = plugin;
@@ -47,6 +49,11 @@ public final class Main implements Listener {
 		public void run() {
 			tickMethod();
 		}}, 0, 2);
+        
+        Bukkit.getScheduler().scheduleSyncRepeatingTask(plugin, new Runnable() {
+		public void run() {
+			secondTimer();
+		}}, 0, 20);
     }
     
     protected void tickMethod() {
@@ -60,7 +67,7 @@ public final class Main implements Listener {
     			player.setSaturation(9.5f);
     			player.setGlowing(false);
     			
-    			if (state == 5){//IF INGAME FINISH
+    			if (state == 500000001){//IF INGAME FINISH //TODO: GAME FINISH
     				if (player.getLocation().getBlockX() >= 125 && player.getLocation().getBlockX() <= 127) {
     					player.teleport(new Location(player.getWorld(), 130, 123, -2, 90, 2));
     				}
@@ -69,18 +76,22 @@ public final class Main implements Listener {
     			if (state == 1){
     				if (IngameUsers.size() == ReadyUsers.size()){
     					state = 2;
-    	    			for(Player target : Bukkit.getServer().getOnlinePlayers()) {
-    	    					target.teleport(new Location(Bukkit.getWorld("ImmoParkour"), 1, 226, -1, 90, 2));
+    					Bukkit.getPluginCommand("imunloadworld").execute(Bukkit.getConsoleSender(), "imunloadworld", new String[]{""});
+    					Bukkit.getPluginCommand("imcreateworld").execute(Bukkit.getConsoleSender(), "imcreateworld", new String[]{""});
+    	    			
+    					for(Player target : Bukkit.getServer().getOnlinePlayers()) {
+    	    					//target.teleport(new Location(Bukkit.getWorld("ImmoParkour"), 1, 226, -1, 90, 2));
+    	    					target.teleport(Bukkit.getWorld("im").getSpawnLocation());
     	    			}
     				}
     			}
     			
     			if (state == 2){
-    				if (player.getWorld().getName().equals("ImmoParkour")){
+    				if (player.getWorld().getName().equals("im")){
     					i += 1;
     				}
     			}
-    			if (state == 3){
+    			if (state == 5000000){ //TODO REPLACE WOOL
     				state = 4;
     				
 					World world = Bukkit.getWorld("ImmoParkour");
@@ -113,12 +124,28 @@ public final class Main implements Listener {
     	}
     	if (state == 2){
     		if (i == IngameUsers.size()){
+    			time_left = 5*60;
     			state = 3;
     			main.getLogger().info("All players Succesfully Arived");
     		}
     	}
     	}
 		
+	}
+    
+   protected void secondTimer(){ 
+		if (state == 3){
+			if (time_left > 0){
+				time_left -= 1;
+			for (Player target : Bukkit.getServer().getOnlinePlayers()) {
+				target.setExp((float)(time_left/5*20)*100);
+		}
+		}
+			else
+			{
+				state = 4;
+			}
+		}
 	}
     
     @EventHandler
