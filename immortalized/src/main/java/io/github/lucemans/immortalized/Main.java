@@ -1,4 +1,5 @@
 package io.github.lucemans.immortalized;
+import java.io.File;
 import java.util.ArrayList;
 
 import org.bukkit.Bukkit;
@@ -19,29 +20,28 @@ import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.material.MaterialData;
 import org.bukkit.material.Wool;
 import org.bukkit.metadata.FixedMetadataValue;
-import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 
-public final class Main extends JavaPlugin implements Listener {
+public final class Main implements Listener {
 	
 	public int state = 0; //LOBBY;
 	//public UIManager ui; //COMMENTED OUT FOR NOW
 	public ArrayList<Player> IngameUsers = new ArrayList<Player>();
 	public ArrayList<Player> ReadyUsers = new ArrayList<Player>();
 	
-    @Override
-    public void onEnable() {
+	public static io.github.lucemans.main.Main main;
+	
+    public Main(io.github.lucemans.main.Main plugin) {
     	
-    	//ui = new UIManager(this);
+    	main = plugin;
     	
-    	Bukkit.getPluginManager().registerEvents(this, this);
-    	//Bukkit.getPluginManager().registerEvents(ui, this);
+    	plugin.getServer().getPluginManager().registerEvents(this, plugin);
     	
-        getLogger().info("Server Immortalized :P");
+        plugin.getLogger().info("Server Immortalized :P");
         
-        Bukkit.getScheduler().scheduleSyncRepeatingTask(this, new Runnable() {
+        Bukkit.getScheduler().scheduleSyncRepeatingTask(plugin, new Runnable() {
 		public void run() {
 			tickMethod();
 		}}, 0, 2);
@@ -106,13 +106,13 @@ public final class Main extends JavaPlugin implements Listener {
     								}//-3 226 2 //-3 23- -4
     							}
     					}
-    				}.runTaskLater(this, 5*20);
+    				}.runTaskLater(main, 5*20);
     			}
     	}
     	if (state == 2){
     		if (i == IngameUsers.size()){
     			state = 3;
-    			getLogger().info("All players Succesfully Arived");
+    			main.getLogger().info("All players Succesfully Arived");
     		}
     	}
     	}
@@ -133,10 +133,10 @@ public final class Main extends JavaPlugin implements Listener {
     		if (player.getHealth() - event.getFinalDamage() <= 0 && !player.hasMetadata(cause.toString())){ //IF THE FUCKING PLAYER DIES
     			if (cause.toString() != "VOID" && cause.toString() != "CUSTOM"){
     				if (cause.toString() == "FIRE_TICK" || cause.toString() == "FIRE" || cause.toString() == "LAVA") {
-        				player.setMetadata("FIRE", new FixedMetadataValue(this, true));
-        				player.setMetadata("FIRE_TICK", new FixedMetadataValue(this, true));
-        				player.setMetadata("LAVA", new FixedMetadataValue(this, true));
-        				getLogger().info("[DEATH]: " + player.getName().toString() + " Died by " + cause.toString());
+        				player.setMetadata("FIRE", new FixedMetadataValue(main, true));
+        				player.setMetadata("FIRE_TICK", new FixedMetadataValue(main, true));
+        				player.setMetadata("LAVA", new FixedMetadataValue(main, true));
+        				main.getLogger().info("[DEATH]: " + player.getName().toString() + " Died by " + cause.toString());
         				player.sendMessage("[DEATH]: You became inmune to " + cause.toString());
         				for(Player target : Bukkit.getOnlinePlayers()) {
         					if (!target.equals(player)){
@@ -146,8 +146,8 @@ public final class Main extends JavaPlugin implements Listener {
     				}
     				else
     				{
-        				player.setMetadata(cause.toString(), new FixedMetadataValue(this, true));
-        				getLogger().info("[DEATH]: " + player.getName().toString() + " Died by " + cause.toString());
+        				player.setMetadata(cause.toString(), new FixedMetadataValue(main, true));
+        				main.getLogger().info("[DEATH]: " + player.getName().toString() + " Died by " + cause.toString());
         				player.sendMessage("[DEATH]: You became inmune to " + cause.toString());
         				for(Player target : Bukkit.getOnlinePlayers()) {
         					if (!target.equals(player)){
@@ -168,14 +168,22 @@ public final class Main extends JavaPlugin implements Listener {
     	}
     }
     
-    @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args){    	
-    	getLogger().info("CMD");
+    	main.getLogger().info("CMD");
     	
     	if (cmd.getName().equalsIgnoreCase("imcreateworld")) {
     		World world = Bukkit.createWorld(new WorldCreator("im"));
     		((Player) sender).teleport(world.getSpawnLocation());
     	}
+    	
+    	if (cmd.getName().equalsIgnoreCase("imunloadworld")) {
+    		//World world = Bukkit.getWorld("im");
+    		Bukkit.unloadWorld("im", false);
+    		World delete = Bukkit.getWorld("im");
+    		File deleteFolder = delete.getWorldFolder();
+    		deleteWorld(deleteFolder);
+    	}
+    	
     	//IMjoin
     	if (cmd.getName().equalsIgnoreCase("imjoin")) {
     		if (state == 0){
@@ -184,7 +192,7 @@ public final class Main extends JavaPlugin implements Listener {
     				if (player.getWorld().getName().equals("Lobby")){
     					IngameUsers.add(player);
     					player.teleport(new Location(Bukkit.getWorld("ImmoLobby"),0, 65, 0, 0, 0));
-    					getLogger().info("Teleporting players to Lobby");
+    					main.getLogger().info("Teleporting players to Lobby");
     					player.sendMessage("You Joined Immortualize. Type /im if you are ready");
     				}
     			}
@@ -195,6 +203,7 @@ public final class Main extends JavaPlugin implements Listener {
     	}
     	
     	if (cmd.getName().equalsIgnoreCase("im")){
+    		if (state == 1 || state == 2){
     		if (IngameUsers.contains((Player) sender)){
     			if (!ReadyUsers.contains((Player) sender)){
     				ReadyUsers.add((Player) sender);
@@ -217,6 +226,9 @@ public final class Main extends JavaPlugin implements Listener {
     			((Player) sender).sendMessage("You are Not Ingame");
     			return true;
     		}
+    		}
+			((Player) sender).sendMessage("You are Not Ingame");
+    		return true;
     	}
     	
     	//IMR
@@ -224,13 +236,13 @@ public final class Main extends JavaPlugin implements Listener {
     		if(args[0].equalsIgnoreCase("all")){
     	    	for(Player player : Bukkit.getServer().getOnlinePlayers()) {
     	    		if (args[1] == "FIRE" || args[1] == "FIRE_TICK" || args[1] == "LAVA"){
-    	    			player.removeMetadata("FIRE", this);
-    	    			player.removeMetadata("FIRE_TICK", this);
-    	    			player.removeMetadata("LAVA", this);
+    	    			player.removeMetadata("FIRE", main);
+    	    			player.removeMetadata("FIRE_TICK", main);
+    	    			player.removeMetadata("LAVA", main);
     	    		}
     	    		else
     	    		{
-    	    		player.removeMetadata(args[1], this);
+    	    		player.removeMetadata(args[1], main);
     	    		}
     	    	}
     	    	return true;
@@ -241,14 +253,29 @@ public final class Main extends JavaPlugin implements Listener {
     			return false;
     		}
     		if (args[1] == "FIRE" || args[1] == "FIRE_TICK" || args[1] == "LAVA"){
-    			target.removeMetadata("FIRE", this);
-    			target.removeMetadata("FIRE_TICK", this);
-    			target.removeMetadata("LAVA", this);
+    			target.removeMetadata("FIRE", main);
+    			target.removeMetadata("FIRE_TICK", main);
+    			target.removeMetadata("LAVA", main);
     			return true;
     		}
-    		target.removeMetadata(args[1], this);
+    		target.removeMetadata(args[1], main);
     		return true;
     	}
     	return false;
+    }
+    
+    public void deleteWorld(File path) {
+    	if (path.exists()) {
+    		File files[] = path.listFiles();
+    		for (int i=0; i<files.length; i++) {
+    			if (files[i].isDirectory()) {
+    				deleteWorld(files[i]);
+    			}
+    			else
+    			{
+    				files[i].delete();
+    			}
+    		}
+    	}
     }
 }

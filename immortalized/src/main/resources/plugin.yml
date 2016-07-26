@@ -1,5 +1,5 @@
 name: Minigames
-main: io.github.lucemans.immortalized.Main
+main: io.github.lucemans.main.Main
 version: 0.1
 commands:
    imr:
@@ -18,6 +18,11 @@ commands:
       permission: immortalized.imjoin
       permission-message: You don't have <permission>
    imcreateworld:
+      description: .
+      usage: /imjoin
+      permission: immortalized.imjoin
+      permission-message: You don't have <permission>
+   imunloadworld:
       description: .
       usage: /imjoin
       permission: immortalized.imjoin
