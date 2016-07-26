@@ -1,7 +1,9 @@
 package io.github.lucemans.immortalized;
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 
+import org.apache.commons.io.FileUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.DyeColor;
 import org.bukkit.Location;
@@ -178,10 +180,17 @@ public final class Main implements Listener {
     	
     	if (cmd.getName().equalsIgnoreCase("imunloadworld")) {
     		//World world = Bukkit.getWorld("im");
-    		Bukkit.unloadWorld("im", false);
-    		World delete = Bukkit.getWorld("im");
-    		File deleteFolder = delete.getWorldFolder();
-    		deleteWorld(deleteFolder);
+    		try
+            {
+                File folder = Bukkit.getWorld("im").getWorldFolder();
+                Bukkit.unloadWorld("im", false);
+                FileUtils.deleteDirectory(folder);
+            }
+            catch (IOException e)
+            {
+                main.getLogger().severe("Failed to delete world folder: " + e.getMessage());
+                e.printStackTrace();
+            }
     	}
     	
     	//IMjoin
@@ -248,34 +257,22 @@ public final class Main implements Listener {
     	    	return true;
     		}
     		Player target = Bukkit.getServer().getPlayer(args[0]);
-    		if (target == null){
+    		if (target == null)
+    		{
     			sender.sendMessage(args[0] + " is Dead");
     			return false;
     		}
+    		
     		if (args[1] == "FIRE" || args[1] == "FIRE_TICK" || args[1] == "LAVA"){
     			target.removeMetadata("FIRE", main);
     			target.removeMetadata("FIRE_TICK", main);
     			target.removeMetadata("LAVA", main);
     			return true;
     		}
+    		
     		target.removeMetadata(args[1], main);
     		return true;
     	}
     	return false;
-    }
-    
-    public void deleteWorld(File path) {
-    	if (path.exists()) {
-    		File files[] = path.listFiles();
-    		for (int i=0; i<files.length; i++) {
-    			if (files[i].isDirectory()) {
-    				deleteWorld(files[i]);
-    			}
-    			else
-    			{
-    				files[i].delete();
-    			}
-    		}
-    	}
     }
 }

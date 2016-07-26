@@ -2,12 +2,16 @@ package io.github.lucemans.main;
 
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
+import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public final class Main extends JavaPlugin implements Listener 
 {	
 	public static io.github.lucemans.immortalized.Main immo;
+	
+	public String state = "Lobby";
 	
 	@Override
     public void onEnable()
@@ -27,5 +31,9 @@ public final class Main extends JavaPlugin implements Listener
 		return immo.onCommand(sender, cmd, label, args);
 	}
 	
+	@EventHandler
+	public void onPlayerJoin(PlayerJoinEvent event) {
+		
+	}
 }
 
