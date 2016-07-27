@@ -40,21 +40,16 @@ public final class Main extends JavaPlugin implements Listener
 		{
 			if(player.hasMetadata("vote"))
 			{
-				getLogger().info(player.getName() + " has vote Metadata");
 				if(player.getMetadata("vote").get(0).asString().equals("immostr"))
 				{
-					//getLogger().info("immostring found");
 					immoint = immoint + 1;
 				}
 				if(player.getMetadata("vote").get(0).asString().equals("vengfullstr"))
 				{
-					//getLogger().info("vengfullstring found");
 					vengfullint = vengfullint + 1;
 				}
-				player.sendMessage("FID: " + player.getMetadata("vote").get(0).asString());
 			}
 		}
-		Bukkit.broadcastMessage("IMMORTAL: " + immoint + " VENGFULL: " + vengfullint);
 		int num = getLargestKey(immoint, vengfullint);
 		++num;
 		if(num == 1)
@@ -65,7 +60,6 @@ public final class Main extends JavaPlugin implements Listener
 		{
 			vote = "vengfullstr";
 		}
-		Bukkit.broadcastMessage("num - " + num);
 		return vote;
 	}
 	
@@ -88,15 +82,11 @@ public final class Main extends JavaPlugin implements Listener
 		Action action = event.getAction();
 		if(event.getAction() == Action.RIGHT_CLICK_BLOCK)
 		{
-			player.sendMessage("right click block");//RIGHT CLICK
 			Block block = event.getClickedBlock();
 			if(block.getState() instanceof Sign)
 			{
-				player.sendMessage("SIGN"); //SIGN
 				Sign sign = (Sign) block.getState();
-				player.sendMessage("rightlickEvent");
 				playerRightClickSign(player, sign);
-				player.sendMessage("DONE");
 			}
 		}
 	}
@@ -116,7 +106,7 @@ public final class Main extends JavaPlugin implements Listener
 		String line3 = sign.getLine(2);
 		String line4 = sign.getLine(3);
 		
-		player.sendMessage("SIGN1: " + line1 + "SIGN2: " + line2);
+		//player.sendMessage("SIGN1: " + line1 + "SIGN2: " + line2);
 		
 		if(line1.equals("Immortalized"))
 		{
