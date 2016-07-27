@@ -20,6 +20,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.material.MaterialData;
 import org.bukkit.material.Wool;
@@ -27,10 +28,6 @@ import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.scoreboard.Scoreboard;
-import org.bukkit.scoreboard.ScoreboardManager;
-import org.bukkit.scoreboard.Team;
-import org.bukkit.scoreboard.Team.OptionStatus;
 
 public final class Main implements Listener {
 	
@@ -42,6 +39,7 @@ public final class Main implements Listener {
 	public static io.github.lucemans.main.Main main;
 	
 	public int time_left = 0;
+	public int time_endleft = 0;
 	
 	public String gameWinner = "";
 	
@@ -68,7 +66,8 @@ public final class Main implements Listener {
     	if (state > 0){
     	int i = 0;
     	int k = 0;
-    	for(Player player : Bukkit.getServer().getOnlinePlayers()) {
+    	int l = 0;
+    	for(Player player : IngameUsers) {
     		//if(player.getWorld().getName() == "ImmoParkour") { //TODO replace world vert. with game status check
     			//player.removePotionEffect(PotionEffectType.NIGHT_VISION);
     			player.addPotionEffect(new PotionEffect(PotionEffectType.NIGHT_VISION, 6*20*2000, 10));
@@ -80,13 +79,14 @@ public final class Main implements Listener {
     				player.setGlowing(true);
     			}
     			
-    			if (state == 7){//IF INGAME FINISH //TODO: GAME FINISH
+    			if (state == 7){
     				if (player.getLocation().getBlockX() >= 125 && player.getLocation().getBlockX() <= 127 && player.getWorld().equals(Bukkit.getWorld("ImmoParkour"))) {
     					player.teleport(new Location(player.getWorld(), 130, 123, -2, 90, 2));
+    					time_endleft = 10;
     					state = 8;
     					Bukkit.broadcastMessage(player.getName() + " Won the Game");
     					gameWinner = player.getName();
-    					for (Player target : Bukkit.getServer().getOnlinePlayers()){
+    					for (Player target : IngameUsers){
     						if (!target.getName().equals(player.getName())){
     							target.teleport(player.getLocation());
     						}
@@ -105,9 +105,10 @@ public final class Main implements Listener {
     		    		world.setGameRuleValue("CommandBlockOutput", "false");
     		    		world.setGameRuleValue("keepinventory", "true");
     	    			
-    					for(Player target : Bukkit.getServer().getOnlinePlayers()) {
+    					for(Player target : IngameUsers) {
     	    					//target.teleport(new Location(Bukkit.getWorld("ImmoParkour"), 1, 226, -1, 90, 2));
     	    					target.teleport(world.getSpawnLocation());
+    	    					target.setGameMode(GameMode.SURVIVAL);
     	    					target.setBedSpawnLocation(player.getWorld().getSpawnLocation());
     	    					target.performCommand("spawnpoint");
     	    					removeAllImmortals(target);
@@ -155,6 +156,18 @@ public final class Main implements Listener {
     					}
     				}.runTaskLater(main, 5*20);
     			}
+    			if (player.getWorld().getName().equals("ImmoLobby") && !player.getGameMode().equals(GameMode.ADVENTURE)){
+    				player.setGameMode(GameMode.ADVENTURE);
+    			}
+    			if (player.getWorld().getName().equals("ImmoParkour") && !player.getGameMode().equals(GameMode.ADVENTURE) && !player.getGameMode().equals(GameMode.SPECTATOR)){
+    				player.setGameMode(GameMode.ADVENTURE);
+    			}
+    			if (player.getWorld().getName().equals("im") && !player.getWorld().equals(GameMode.SURVIVAL)) {
+    				player.setGameMode(GameMode.SURVIVAL);
+    			}
+    			if (player.getGameMode().equals(GameMode.SPECTATOR)){
+    				l += 1;
+    			}
     	}
     	if (state == 2){
     		if (i == IngameUsers.size()){
@@ -170,14 +183,31 @@ public final class Main implements Listener {
     			main.getLogger().info("All players Succesfully Arived");
     		}
     	}
+    	if (state == 7){
+    		if (l == IngameUsers.size()){
+    			state = 0; //EVERYONE DIED
+    			for (Player target : IngameUsers){
+    				target.sendMessage("Nobody became the Immortal Master..... stay determined");
+					removeAllImmortals(target);
+					target.setGlowing(false);
+					target.setHealth(target.getMaxHealth());
+					target.setGameMode(GameMode.ADVENTURE);
+					target.teleport(Bukkit.getWorld("Lobby").getSpawnLocation());
+    				IngameUsers.clear();
+    				ReadyUsers.clear();
+    			}
+    		}
+    	}
     	} 
+    	
+
     }
     
    protected void secondTimer(){ 
 		if (state == 3){
 			if (time_left > 0){
 				time_left -= 1;
-			for (Player target : Bukkit.getServer().getOnlinePlayers()) {
+			for (Player target : IngameUsers) {
 				target.setExp(1f);
 				target.setLevel(time_left);
 				//target.sendMessage(time_left + " Left");
@@ -187,8 +217,31 @@ public final class Main implements Listener {
 			{
 				state = 4;
 				main.getLogger().info("TIMES OVER");
-				for (Player player : Bukkit.getOnlinePlayers()) {
+				for (Player player : IngameUsers) {
 					player.teleport(new Location(Bukkit.getWorld("ImmoParkour"), 1, 226, -1, 91, 2));
+					player.setGameMode(GameMode.ADVENTURE);
+				}
+			}
+		}
+		if (state == 8){
+			if (time_endleft > 0){
+				time_endleft -= 1;
+			for (Player target : IngameUsers) {
+				target.setExp(1f);
+				target.setLevel(time_endleft);
+			}
+			}
+			else
+			{
+				state = 0;
+				for (Player player : IngameUsers) {
+					removeAllImmortals(player);
+					player.setGlowing(false);
+					player.setHealth(player.getMaxHealth());
+					player.setGameMode(GameMode.ADVENTURE);
+					player.teleport(Bukkit.getWorld("Lobby").getSpawnLocation());
+					IngameUsers.clear();
+    				ReadyUsers.clear();
 				}
 			}
 		}
@@ -244,6 +297,11 @@ public final class Main implements Listener {
     				}
     			}
     		}
+        	if (state == 7 && player.getHealth() - event.getFinalDamage() <= 0 && !player.hasMetadata(cause.toString())){
+        		player.setGameMode(GameMode.SPECTATOR); //PLEASE WORK //TODO
+        		player.sendMessage("You died you are now in Spectator Mode");
+        		event.setCancelled(true);
+        	}
     	}
     	}
     }
@@ -252,9 +310,6 @@ public final class Main implements Listener {
     public void onPlayerDeath(PlayerDeathEvent event) {
     	if (state > 0) {
     	event.setDeathMessage("");
-    	}
-    	if (state == 7){
-    		event.getEntity().setGameMode(GameMode.SPECTATOR); //PLEASE WORK
     	}
     }
     
@@ -291,6 +346,7 @@ public final class Main implements Listener {
     					player.setHealth(player.getMaxHealth());
     					removeAllImmortals(player);
     					player.teleport(new Location(Bukkit.getWorld("ImmoLobby"),0, 65, 0, 0, 0));
+    					player.setGameMode(GameMode.ADVENTURE);
     					main.getLogger().info("Teleporting players to Lobby");
     					player.sendMessage("You Joined Immortualize. Type /ready if you are ready");
     				}
@@ -369,7 +425,29 @@ public final class Main implements Listener {
     @EventHandler
     public void onRespawn(PlayerRespawnEvent event){
     	if (state == 3){
-    	event.getPlayer().teleport(Bukkit.getWorld("im").getSpawnLocation());    	
+    	event.getPlayer().teleport(Bukkit.getWorld("im").getSpawnLocation());    
+    	event.getPlayer().setGameMode(GameMode.SURVIVAL);
     	}
+    }
+    
+    public void start(){
+		if (state == 0){
+			state = 1;
+			for(Player player : Bukkit.getServer().getOnlinePlayers()) {
+				if (player.getWorld().getName().equals("Lobby")){
+					IngameUsers.add(player);
+					player.setHealth(player.getMaxHealth());
+					removeAllImmortals(player);
+					player.teleport(new Location(Bukkit.getWorld("ImmoLobby"),0, 65, 0, 0, 0));
+					main.getLogger().info("Teleporting players to Lobby");
+					player.sendMessage("You Joined Immortualize. Type /ready if you are ready");
+				}
+			}
+		}
+    }
+    
+    @EventHandler
+    public void onPlayerInteract(PlayerInteractEvent event){
+    	main.getLogger().info("YOU FUCKING WORK :P");
     }
 }

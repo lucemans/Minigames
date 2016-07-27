@@ -12,7 +12,6 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.metadata.FixedMetadataValue;
-import org.bukkit.metadata.MetadataValue;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public final class Main extends JavaPlugin implements Listener 
@@ -27,6 +26,7 @@ public final class Main extends JavaPlugin implements Listener
     public void onEnable()
     {
 		immo = new io.github.lucemans.immortalized.Main(this);
+		Bukkit.getPluginManager().registerEvents(this, this);
 		
 		getLogger().info("MAIN 2nd WORKS");
     }
@@ -34,22 +34,38 @@ public final class Main extends JavaPlugin implements Listener
 	public String getVotes()
 	{
 		int immoint = 0;
+		int vengfullint = 0;
 		String vote = "";
 		for(Player player : Bukkit.getOnlinePlayers())
 		{
 			if(player.hasMetadata("vote"))
 			{
-				if(player.getMetadata("vote").equals("immostr"))
+				getLogger().info(player.getName() + " has vote Metadata");
+				if(player.getMetadata("vote").get(0).asString().equals("immostr"))
 				{
-					++immoint;
+					//getLogger().info("immostring found");
+					immoint = immoint + 1;
 				}
+				if(player.getMetadata("vote").get(0).asString().equals("vengfullstr"))
+				{
+					//getLogger().info("vengfullstring found");
+					vengfullint = vengfullint + 1;
+				}
+				player.sendMessage("FID: " + player.getMetadata("vote").get(0).asString());
 			}
 		}
-		int num = getLargestKey(immoint);
+		Bukkit.broadcastMessage("IMMORTAL: " + immoint + " VENGFULL: " + vengfullint);
+		int num = getLargestKey(immoint, vengfullint);
+		++num;
 		if(num == 1)
 		{
 			vote = "immostr";
 		}
+		if(num == 2)
+		{
+			vote = "vengfullstr";
+		}
+		Bukkit.broadcastMessage("num - " + num);
 		return vote;
 	}
 	
@@ -72,30 +88,49 @@ public final class Main extends JavaPlugin implements Listener
 		Action action = event.getAction();
 		if(event.getAction() == Action.RIGHT_CLICK_BLOCK)
 		{
+			player.sendMessage("right click block");//RIGHT CLICK
 			Block block = event.getClickedBlock();
 			if(block.getState() instanceof Sign)
 			{
+				player.sendMessage("SIGN"); //SIGN
 				Sign sign = (Sign) block.getState();
+				player.sendMessage("rightlickEvent");
 				playerRightClickSign(player, sign);
+				player.sendMessage("DONE");
 			}
 		}
 	}
 	
 	public void vote(Player player, String string)
 	{
-		player.setMetadata(string, new FixedMetadataValue(this, "vote"));
+		if (player.hasMetadata("vote")){player.removeMetadata("vote", this);}
+		player.setMetadata("vote", new FixedMetadataValue(this, string));
+		player.sendMessage("you voted for " + string);
 	}
 	
 	public void playerRightClickSign(Player player, Sign sign)
 	{
-		String line1 = sign.getLine(1);
-		String line2 = sign.getLine(2);
-		String line3 = sign.getLine(3);
-		String line4 = sign.getLine(4);
+		player.sendMessage("-");
+		String line1 = sign.getLine(0);
+		String line2 = sign.getLine(1);
+		String line3 = sign.getLine(2);
+		String line4 = sign.getLine(3);
+		
+		player.sendMessage("SIGN1: " + line1 + "SIGN2: " + line2);
 		
 		if(line1.equals("Immortalized"))
 		{
+			player.sendMessage("IMMORTALIZED");
 			vote(player, "immostr");
+			
+		}
+		if(line1.equals("Vengfullone"))
+		{
+			player.sendMessage("VENGFULLONE");
+			vote(player, "vengfullstr");
+		}
+		if(line1.equals("topvotes")){
+			player.sendMessage(getVotes());
 		}
 		if(this.voting != false)
 		{
@@ -103,7 +138,7 @@ public final class Main extends JavaPlugin implements Listener
 		}
 	}
 	
-	public int getLargestKey(int ... nums)
+	public int getLargestKey(int ... nums)//3 5 8 1
 	{
 		int max = 0;
 		int num = 0;
