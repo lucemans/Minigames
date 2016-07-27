@@ -7,10 +7,10 @@ commands:
       usage: /imr [player] [cause]
       permission: immortalized.imr
       permission-message: You don't have <permission>
-   im:
+   ready:
       description: .
-      usage: /im
-      permission: immortalized.im
+      usage: /ready
+      permission: immortalized.ready
       permission-message: You don't have <permission>
    imjoin:
       description: .

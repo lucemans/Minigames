@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import org.apache.commons.io.FileUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.DyeColor;
+import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -19,12 +20,17 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.material.MaterialData;
 import org.bukkit.material.Wool;
 import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scoreboard.Scoreboard;
+import org.bukkit.scoreboard.ScoreboardManager;
+import org.bukkit.scoreboard.Team;
+import org.bukkit.scoreboard.Team.OptionStatus;
 
 public final class Main implements Listener {
 	
@@ -36,6 +42,8 @@ public final class Main implements Listener {
 	public static io.github.lucemans.main.Main main;
 	
 	public int time_left = 0;
+	
+	public String gameWinner = "";
 	
     public Main(io.github.lucemans.main.Main plugin) {
     	
@@ -59,6 +67,7 @@ public final class Main implements Listener {
     protected void tickMethod() {
     	if (state > 0){
     	int i = 0;
+    	int k = 0;
     	for(Player player : Bukkit.getServer().getOnlinePlayers()) {
     		//if(player.getWorld().getName() == "ImmoParkour") { //TODO replace world vert. with game status check
     			//player.removePotionEffect(PotionEffectType.NIGHT_VISION);
@@ -67,21 +76,41 @@ public final class Main implements Listener {
     			player.setSaturation(9.5f);
     			player.setGlowing(false);
     			
-    			if (state == 500000001){//IF INGAME FINISH //TODO: GAME FINISH
-    				if (player.getLocation().getBlockX() >= 125 && player.getLocation().getBlockX() <= 127) {
+    			if (state == 8 && player.getName().equals(gameWinner)){
+    				player.setGlowing(true);
+    			}
+    			
+    			if (state == 7){//IF INGAME FINISH //TODO: GAME FINISH
+    				if (player.getLocation().getBlockX() >= 125 && player.getLocation().getBlockX() <= 127 && player.getWorld().equals(Bukkit.getWorld("ImmoParkour"))) {
     					player.teleport(new Location(player.getWorld(), 130, 123, -2, 90, 2));
+    					state = 8;
+    					Bukkit.broadcastMessage(player.getName() + " Won the Game");
+    					gameWinner = player.getName();
+    					for (Player target : Bukkit.getServer().getOnlinePlayers()){
+    						if (!target.getName().equals(player.getName())){
+    							target.teleport(player.getLocation());
+    						}
+    					}
     				}
     			}
     			
     			if (state == 1){
     				if (IngameUsers.size() == ReadyUsers.size()){
     					state = 2;
-    					Bukkit.getPluginCommand("imunloadworld").execute(Bukkit.getConsoleSender(), "imunloadworld", new String[]{""});
-    					Bukkit.getPluginCommand("imcreateworld").execute(Bukkit.getConsoleSender(), "imcreateworld", new String[]{""});
+    					if (Bukkit.getWorld("im") != null){
+    						Bukkit.getPluginCommand("imunloadworld").execute(Bukkit.getConsoleSender(), "imunloadworld", new String[]{""});
+    					}
+    					
+    		    		World world = Bukkit.createWorld(new WorldCreator("im"));
+    		    		world.setGameRuleValue("CommandBlockOutput", "false");
+    		    		world.setGameRuleValue("keepinventory", "true");
     	    			
     					for(Player target : Bukkit.getServer().getOnlinePlayers()) {
     	    					//target.teleport(new Location(Bukkit.getWorld("ImmoParkour"), 1, 226, -1, 90, 2));
-    	    					target.teleport(Bukkit.getWorld("im").getSpawnLocation());
+    	    					target.teleport(world.getSpawnLocation());
+    	    					target.setBedSpawnLocation(player.getWorld().getSpawnLocation());
+    	    					target.performCommand("spawnpoint");
+    	    					removeAllImmortals(target);
     	    			}
     				}
     			}
@@ -91,8 +120,13 @@ public final class Main implements Listener {
     					i += 1;
     				}
     			}
-    			if (state == 5000000){ //TODO REPLACE WOOL
-    				state = 4;
+    			if (state == 4){
+    				if (player.getWorld().getName().equals("ImmoParkour")){
+    					k += 1;
+    				}
+    			}
+    			if (state == 5){ //TODO REPLACE WOOL
+    				state = 6;
     				
 					World world = Bukkit.getWorld("ImmoParkour");
 					for (int z = -4; z <= 2; z++) {
@@ -110,7 +144,7 @@ public final class Main implements Listener {
     					@Override
     					public void run()
     					{
-    						state = 5;
+    						state = 7;
     						//BLOCK REPLACEMENT
     						World world = Bukkit.getWorld("ImmoParkour");
     							for (int z = -4; z <= 2; z++) {
@@ -124,42 +158,66 @@ public final class Main implements Listener {
     	}
     	if (state == 2){
     		if (i == IngameUsers.size()){
-    			time_left = 5*60;
+    			time_left = 10; //TODO:EDIT TIME in seconds
     			state = 3;
+    			main.getLogger().info("All players Succesfully Arived");
+    			Bukkit.broadcastMessage("You are now Vurnerable");
+    		}
+    	}
+    	if (state == 4){
+    		if (k == IngameUsers.size()){
+    			state = 5;
     			main.getLogger().info("All players Succesfully Arived");
     		}
     	}
-    	}
-		
-	}
+    	} 
+    }
     
    protected void secondTimer(){ 
 		if (state == 3){
 			if (time_left > 0){
 				time_left -= 1;
 			for (Player target : Bukkit.getServer().getOnlinePlayers()) {
-				target.setExp((float)(time_left/5*20)*100);
+				target.setExp(1f);
+				target.setLevel(time_left);
+				//target.sendMessage(time_left + " Left");
 		}
 		}
 			else
 			{
 				state = 4;
+				main.getLogger().info("TIMES OVER");
+				for (Player player : Bukkit.getOnlinePlayers()) {
+					player.teleport(new Location(Bukkit.getWorld("ImmoParkour"), 1, 226, -1, 91, 2));
+				}
 			}
 		}
 	}
     
+   public void removeAllImmortals(Player target){
+	   for (DamageCause cause: DamageCause.values()) {
+		   Bukkit.getPluginCommand("imr").execute(Bukkit.getConsoleSender(), "imr", new String[]{target.getName(), cause.toString()});
+	   }
+   }
+   
     @EventHandler
     public void onEntityDamage(EntityDamageEvent event) {
-    	if (state > 0) {
+    	if (state == 1 || state == 2){
+    	event.setCancelled(true);
+    	return;
+    	}
+    	
+    	if (state >= 0){
     	DamageCause cause = event.getCause();
     	if (event.getEntity() instanceof Player) {
     		Player player = (Player) event.getEntity();
     		
+    		//ALS NIET DOOD KAN
     		if (player.hasMetadata(cause.toString()) || cause.toString().equals("ENTITY_ATTACK")){
     			event.setCancelled(true);
     		}
     		
-    		if (player.getHealth() - event.getFinalDamage() <= 0 && !player.hasMetadata(cause.toString())){ //IF THE FUCKING PLAYER DIES
+    		if (state == 3 && player.getHealth() - event.getFinalDamage() <= 0 && !player.hasMetadata(cause.toString())){ //IF THE FUCKING PLAYER DIES
     			if (cause.toString() != "VOID" && cause.toString() != "CUSTOM"){
     				if (cause.toString() == "FIRE_TICK" || cause.toString() == "FIRE" || cause.toString() == "LAVA") {
         				player.setMetadata("FIRE", new FixedMetadataValue(main, true));
@@ -195,6 +253,9 @@ public final class Main implements Listener {
     	if (state > 0) {
     	event.setDeathMessage("");
     	}
+    	if (state == 7){
+    		event.getEntity().setGameMode(GameMode.SPECTATOR);
+    	}
     }
     
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args){    	
@@ -227,9 +288,11 @@ public final class Main implements Listener {
     			for(Player player : Bukkit.getServer().getOnlinePlayers()) {
     				if (player.getWorld().getName().equals("Lobby")){
     					IngameUsers.add(player);
+    					player.setHealth(player.getMaxHealth());
+    					removeAllImmortals(player);
     					player.teleport(new Location(Bukkit.getWorld("ImmoLobby"),0, 65, 0, 0, 0));
     					main.getLogger().info("Teleporting players to Lobby");
-    					player.sendMessage("You Joined Immortualize. Type /im if you are ready");
+    					player.sendMessage("You Joined Immortualize. Type /ready if you are ready");
     				}
     			}
     		return true;
@@ -238,7 +301,7 @@ public final class Main implements Listener {
     		//ui.showMenu((Player) sender, menu);
     	}
     	
-    	if (cmd.getName().equalsIgnoreCase("im")){
+    	if (cmd.getName().equalsIgnoreCase("ready")){
     		if (state == 1 || state == 2){
     		if (IngameUsers.contains((Player) sender)){
     			if (!ReadyUsers.contains((Player) sender)){
@@ -301,5 +364,12 @@ public final class Main implements Listener {
     		return true;
     	}
     	return false;
+    }
+    
+    @EventHandler
+    public void onRespawn(PlayerRespawnEvent event){
+    	if (state == 3){
+    	event.getPlayer().teleport(Bukkit.getWorld("im").getSpawnLocation());    	
+    	}
     }
 }
