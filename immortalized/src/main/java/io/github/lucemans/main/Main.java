@@ -20,6 +20,8 @@ public final class Main extends JavaPlugin implements Listener
 	public static io.github.lucemans.immortalized.Main immo;
 	
 	public String state = "Lobby";
+
+	private boolean voting = false;
 	
 	@Override
     public void onEnable()
@@ -31,9 +33,10 @@ public final class Main extends JavaPlugin implements Listener
 	
 	public String getVotes()
 	{
+		int immoint = 0;
+		String vote = "";
 		for(Player player : Bukkit.getOnlinePlayers())
 		{
-			int immoint = 0;
 			if(player.hasMetadata("vote"))
 			{
 				if(player.getMetadata("vote").equals("immostr"))
@@ -42,7 +45,12 @@ public final class Main extends JavaPlugin implements Listener
 				}
 			}
 		}
-		return "";
+		int num = getLargestKey(immoint);
+		if(num == 1)
+		{
+			vote = "immostr";
+		}
+		return vote;
 	}
 	
 	public void clearVotes()
@@ -54,6 +62,7 @@ public final class Main extends JavaPlugin implements Listener
 				player.removeMetadata("vote", this);
 			}
 		}
+		this.voting = false;
 	}
 	
 	@EventHandler
@@ -86,20 +95,23 @@ public final class Main extends JavaPlugin implements Listener
 		
 		if(line1.equals("Immortalized"))
 		{
-			
+			vote(player, "immostr");
 		}
-		
+		if(this.voting != false)
+		{
+			this.voting = true;
+		}
 	}
 	
-	public int getLargestKey(int[] args)
+	public int getLargestKey(int ... nums)
 	{
 		int max = 0;
 		int num = 0;
-		for(int i: args)
+		for(int i: nums)
 		{
-			if(args[i] > max)
+			if(nums[i] > max)
 			{
-				max = args[i];
+				max = nums[i];
 				num = i;
 			}
 		}
