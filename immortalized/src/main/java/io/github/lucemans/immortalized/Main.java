@@ -254,7 +254,7 @@ public final class Main implements Listener {
     	event.setDeathMessage("");
     	}
     	if (state == 7){
-    		event.getEntity().setGameMode(GameMode.SPECTATOR);
+    		event.getEntity().setGameMode(GameMode.SPECTATOR); //PLEASE WORK
     	}
     }
     
