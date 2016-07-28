@@ -172,7 +172,7 @@ public final class Main implements Listener {
     	}
     	if (state == 2){
     		if (i == IngameUsers.size()){
-    			time_left = 10; //TODO:EDIT TIME in seconds
+    			time_left = 60*5; //TODO:EDIT TIME in seconds
     			state = 3;
     			main.getLogger().info("All players Succesfully Arived");
     			Bukkit.broadcastMessage("You are now Vurnerable");
