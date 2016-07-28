@@ -35,6 +35,7 @@ public final class Main implements Listener {
 	//public UIManager ui; //COMMENTED OUT FOR NOW
 	public ArrayList<Player> IngameUsers = new ArrayList<Player>();
 	public ArrayList<Player> ReadyUsers = new ArrayList<Player>();
+	public ArrayList<Player> Spectators = new ArrayList<Player>();
 	
 	public static io.github.lucemans.main.Main main;
 	
@@ -195,6 +196,7 @@ public final class Main implements Listener {
 					target.teleport(Bukkit.getWorld("Lobby").getSpawnLocation());
     				IngameUsers.clear();
     				ReadyUsers.clear();
+    				Spectators.clear();
     			}
     		}
     	}
@@ -300,6 +302,7 @@ public final class Main implements Listener {
         	if (state == 7 && player.getHealth() - event.getFinalDamage() <= 0 && !player.hasMetadata(cause.toString())){
         		player.setGameMode(GameMode.SPECTATOR); //PLEASE WORK //TODO
         		player.sendMessage("You died you are now in Spectator Mode");
+        		Spectators.add(player);
         		event.setCancelled(true);
         	}
     	}
@@ -449,5 +452,9 @@ public final class Main implements Listener {
     @EventHandler
     public void onPlayerInteract(PlayerInteractEvent event){
     	main.getLogger().info("YOU FUCKING WORK :P");
+    }
+    
+    public void joinSpectator(Player player){
+    	
     }
 }
