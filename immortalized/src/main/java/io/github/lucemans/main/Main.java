@@ -175,8 +175,9 @@ public final class Main extends JavaPlugin implements Listener
 			event.getPlayer().setGlowing(false);
 			event.getPlayer().setHealth(event.getPlayer().getMaxHealth());
 			event.getPlayer().setGameMode(GameMode.ADVENTURE);
-			event.getPlayer().setSaturation(10f);
+			event.getPlayer().setSaturation(1000f);
 			event.getPlayer().setFoodLevel(20);
+			event.getPlayer().performCommand("spawnpoint");
 		}
 		if (state.equals("Immortalized")){
 			immo.joinSpectator(event.getPlayer());
@@ -223,6 +224,20 @@ public final class Main extends JavaPlugin implements Listener
 			sign.update(true);
 		}
 		//End
+		
+		for (Player player : Bukkit.getOnlinePlayers()) {
+			if (player.getWorld().getName().equals("Lobby")) {
+				if (player.getLocation().getBlockY() <= 60){
+					player.teleport(Bukkit.getWorld("Lobby").getSpawnLocation());
+					player.setGlowing(false);
+					player.getPlayer().setHealth(player.getMaxHealth());
+					player.getPlayer().setGameMode(GameMode.ADVENTURE);
+					player.setSaturation(1000f);
+					player.getPlayer().setFoodLevel(20);
+					player.getPlayer().performCommand("spawnpoint");
+				}
+			}
+		}
 	}//End Tick event
 }//End of Class
 
