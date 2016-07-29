@@ -1,7 +1,5 @@
 package io.github.lucemans.main;
 
-import java.util.HashMap;
-
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
@@ -13,8 +11,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
-import org.bukkit.event.block.BlockBreakEvent;
-import org.bukkit.event.block.SignChangeEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.metadata.FixedMetadataValue;
@@ -23,6 +19,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 public final class Main extends JavaPlugin implements Listener 
 {	
 	public static io.github.lucemans.immortalized.Main immo;
+	public static io.github.lucemans.bookofwritings.Main bow;
 	
 	public String state = "Lobby";
 
@@ -32,6 +29,7 @@ public final class Main extends JavaPlugin implements Listener
     public void onEnable()
     {
 		immo = new io.github.lucemans.immortalized.Main(this);
+		bow = new io.github.lucemans.bookofwritings.Main(this);
 		Bukkit.getPluginManager().registerEvents(this, this);
 		
 		getLogger().info("MAIN 2nd WORKS");
