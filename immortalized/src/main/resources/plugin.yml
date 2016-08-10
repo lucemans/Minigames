@@ -5,25 +5,27 @@ commands:
    imr:
       description: .
       usage: /imr [player] [cause]
-      permission: immortalized.imr
-      permission-message: You don't have <permission>
    ready:
       description: .
       usage: /ready
-      permission: immortalized.ready
-      permission-message: You don't have <permission>
    imjoin:
       description: .
       usage: /imjoin
-      permission: immortalized.imjoin
-      permission-message: You don't have <permission>
    imcreateworld:
       description: .
       usage: /imjoin
-      permission: immortalized.imjoin
-      permission-message: You don't have <permission>
    imunloadworld:
       description: .
       usage: /imjoin
-      permission: immortalized.imjoin
-      permission-message: You don't have <permission>
+   lobby:
+      description: .
+      usage: /lobby
+   econ:
+      description: .
+      usage: /econ
+   imvision:
+      description: .
+      usage: /imvision
+   bypass:
+      description: .
+      usage: /bypass

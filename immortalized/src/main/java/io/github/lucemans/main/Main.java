@@ -1,8 +1,12 @@
 package io.github.lucemans.main;
 
+import java.util.HashMap;
+
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.Sign;
 import org.bukkit.command.Command;
@@ -13,23 +17,39 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.plugin.java.JavaPlugin;
+
+import io.github.lucemans.config.SLAPI;
+import io.github.lucemans.ui.HelloWorldMenu;
+import io.github.lucemans.ui.UIManager;
 
 public final class Main extends JavaPlugin implements Listener 
 {	
 	public static io.github.lucemans.immortalized.Main immo;
 	public static io.github.lucemans.bookofwritings.Main bow;
+	public static io.github.lucemans.config.Main config;
+	public static io.github.lucemans.config.SLAPI slapi;
+	public UIManager ui;
 	
 	public String state = "Lobby";
+	public Inventory voteInv;
+	
+	public int online_players = 0;
 
 	private boolean voting = false;
+	
+	public HashMap<String, Player> BypassUsers = new HashMap<>();
 	
 	@Override
     public void onEnable()
     {
 		immo = new io.github.lucemans.immortalized.Main(this);
 		bow = new io.github.lucemans.bookofwritings.Main(this);
+		config = new io.github.lucemans.config.Main(this);
+		slapi = new io.github.lucemans.config.SLAPI(this);
+		SLAPI.loadBalances();
 		Bukkit.getPluginManager().registerEvents(this, this);
 		
 		getLogger().info("MAIN 2nd WORKS");
@@ -38,8 +58,23 @@ public final class Main extends JavaPlugin implements Listener
 		public void run() {
 			tickMethod();
 		}}, 0, 2);
-       
+        
+        for (Player player : Bukkit.getOnlinePlayers()){
+			player.teleport(Bukkit.getWorld("Lobby").getSpawnLocation());
+			player.setGlowing(false);
+			player.getPlayer().setHealth(player.getMaxHealth());
+			player.getPlayer().setGameMode(GameMode.ADVENTURE);
+			player.setSaturation(1000f);
+			player.getPlayer().setFoodLevel(20);
+			player.getPlayer().performCommand("spawnpoint");
+        }
     }
+	
+	@Override
+	public void onDisable()
+	{
+		SLAPI.saveBalances();
+	}
 	
 	public String getVotes()
 	{
@@ -98,11 +133,25 @@ public final class Main extends JavaPlugin implements Listener
 				Sign sign = (Sign) block.getState();
 				playerRightClickSign(player, sign);
 			}
+			if (block.getState().getType().equals(Material.BEACON)){
+				HelloWorldMenu menu = new HelloWorldMenu(this);
+				ui.showMenu(player, menu);
+				event.setCancelled(true);
+			}
 		}
 	}
 	
 	public void vote(Player player, String string)
 	{
+		if (player.hasMetadata("vote")){
+		if (player.getMetadata("vote").get(0).asString().equals(string))
+		{
+			player.removeMetadata("vote", this);
+			player.sendMessage("you changed your mind");
+			return;
+		}
+		}
+		
 		if (player.hasMetadata("vote")){player.removeMetadata("vote", this);}
 		player.setMetadata("vote", new FixedMetadataValue(this, string));
 		player.sendMessage("you voted for " + string);
@@ -140,8 +189,9 @@ public final class Main extends JavaPlugin implements Listener
 		//TODO: -end
 	}
 	
-	public int getLargestKey(int ... nums)//3 5 8 1
+	public int getLargestKey(int ... nums)//3 5 8 1 //TODO this is broken :| just returning Immortal
 	{
+		/*
 		int max = 0;
 		int num = 0;
 		for(int i: nums)
@@ -151,23 +201,59 @@ public final class Main extends JavaPlugin implements Listener
 				max = nums[i];
 				num = i;
 			}
+			i += 1;
 		}
 		return num;
-	}
-	
-	@Override
-	public void onDisable()
-	{
+		*/
 		
+		return 0;
 	}
 	
 	@Override
 	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
-		return immo.onCommand(sender, cmd, label, args);
+		if (cmd.getName().equalsIgnoreCase("lobby")){
+			state = "lobby";
+			return true;
+		}
+		
+		if (cmd.getName().equalsIgnoreCase("bypass")){
+			if (BypassUsers.containsKey(sender.getName())){
+				BypassUsers.remove(sender.getName());
+				sender.sendMessage("You are not bypassing things anymore");
+			}
+			else
+			{
+				BypassUsers.put(sender.getName(), (Player) sender);
+				sender.sendMessage(ChatColor.GRAY + "You obtained " + ChatColor.DARK_AQUA + "the permission to bypass random things");
+				sender.sendMessage(ChatColor.LIGHT_PURPLE + " #POKEMON");
+			}
+			return true;
+		}
+		
+		boolean immoreturn = immo.onCommand(sender, cmd, label, args);
+		
+		if (immoreturn == true){
+			return true;
+		}
+		
+		boolean configreturn = config.onCommand(sender, cmd, label, args);
+		
+		if (configreturn == true){
+			return true;
+		}
+		
+		sender.sendMessage("Command Execution Failed");
+		return true;
+		
 	}
-	
 	@EventHandler
 	public void onPlayerJoin(PlayerJoinEvent event) {
+		if (!io.github.lucemans.config.Main.hasAccount(event.getPlayer().getName())){
+			getLogger().info(event.getPlayer().getName() + " has been added to the economy");
+			io.github.lucemans.config.Main.bal.put(event.getPlayer().getName(), 200D);
+		}
+		
+		//TELEPORTS
 		if (state.equals("Lobby")){
 			event.getPlayer().teleport(Bukkit.getWorld("Lobby").getSpawnLocation());
 			event.getPlayer().setGlowing(false);
@@ -187,7 +273,6 @@ public final class Main extends JavaPlugin implements Listener
 		//GET VOTES -Start
 		int immoint = 0;
 		int vengfullint = 0;
-		String vote = "";
 		for(Player player : Bukkit.getOnlinePlayers())
 		{
 			if(player.hasMetadata("vote"))
@@ -223,9 +308,13 @@ public final class Main extends JavaPlugin implements Listener
 		}
 		//End
 		
+		online_players = 0;
+		
 		for (Player player : Bukkit.getOnlinePlayers()) {
+			online_players += 1;
 			if (player.getWorld().getName().equals("Lobby")) {
 				if (player.getLocation().getBlockY() <= 60){
+					if (!BypassUsers.containsKey(player.getName())){
 					player.teleport(Bukkit.getWorld("Lobby").getSpawnLocation());
 					player.setGlowing(false);
 					player.getPlayer().setHealth(player.getMaxHealth());
@@ -233,7 +322,32 @@ public final class Main extends JavaPlugin implements Listener
 					player.setSaturation(1000f);
 					player.getPlayer().setFoodLevel(20);
 					player.getPlayer().performCommand("spawnpoint");
+					}
 				}
+			}
+			if (player.getSaturation() < 100f){
+				player.setSaturation(1000f);
+			}
+		}
+		
+		if (immoint + vengfullint == online_players && state == "Lobby" && online_players > 1){
+			int num = getLargestKey(immoint, vengfullint);
+			++num;
+			if(num == 1)
+			{
+				//JOIN IMORTALIZED
+				   Bukkit.getPluginCommand("imjoin").execute(Bukkit.getConsoleSender(), "imjoin", new String[]{});
+				   state = "Immortalized";
+				   //remove all votes/
+				   for (Player player : Bukkit.getOnlinePlayers()){
+					   if (player.hasMetadata("vote")){
+						   player.removeMetadata("vote", this);
+					   }
+				   }
+			}
+			if(num == 2)
+			{
+				//"vengfullstr"; JOIN
 			}
 		}
 	}//End Tick event

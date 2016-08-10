@@ -20,7 +20,8 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.event.entity.PlayerDeathEvent;
-import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerDropItemEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.material.MaterialData;
 import org.bukkit.material.Wool;
@@ -43,6 +44,8 @@ public final class Main implements Listener {
 	public int time_endleft = 0;
 	
 	public String gameWinner = "";
+	
+	public boolean nightvision = true;
 	
     public Main(io.github.lucemans.main.Main plugin) {
     	
@@ -69,9 +72,15 @@ public final class Main implements Listener {
     	int k = 0;
     	int l = 0;
     	for(Player player : IngameUsers) {
-    		//if(player.getWorld().getName() == "ImmoParkour") { //TODO replace world vert. with game status check
-    			//player.removePotionEffect(PotionEffectType.NIGHT_VISION);
+    			if (nightvision){
     			player.addPotionEffect(new PotionEffect(PotionEffectType.NIGHT_VISION, 6*20*2000, 10));
+    			}
+    			else
+    			{
+    				if (player.hasPotionEffect(PotionEffectType.NIGHT_VISION)){
+    					player.removePotionEffect(PotionEffectType.NIGHT_VISION);
+    				}
+    			}
     			player.setFoodLevel(9);
     			player.setSaturation(9.5f);
     			player.setGlowing(false);
@@ -81,7 +90,7 @@ public final class Main implements Listener {
     			}
     			
     			if (state == 7){
-    				if (player.getLocation().getBlockX() >= 125 && player.getLocation().getBlockX() <= 127 && player.getWorld().equals(Bukkit.getWorld("ImmoParkour"))) {
+    				if (player.getLocation().getBlockX() >= 125 && player.getLocation().getBlockX() <= 127 && player.getWorld().equals(Bukkit.getWorld("ImmoParkour")) && !Spectators.contains(player) && IngameUsers.contains(player)) {
     					player.teleport(new Location(player.getWorld(), 130, 123, -2, 90, 2));
     					time_endleft = 10;
     					state = 8;
@@ -89,6 +98,8 @@ public final class Main implements Listener {
     					gameWinner = player.getName();
     					for (Player target : IngameUsers){
     						if (!target.getName().equals(player.getName())){
+    							target.setGameMode(GameMode.ADVENTURE);
+    							target.setHealth(target.getMaxHealth());
     							target.teleport(player.getLocation());
     						}
     					}
@@ -194,10 +205,10 @@ public final class Main implements Listener {
 					target.setHealth(target.getMaxHealth());
 					target.setGameMode(GameMode.ADVENTURE);
 					target.teleport(Bukkit.getWorld("Lobby").getSpawnLocation());
-    				IngameUsers.clear();
-    				ReadyUsers.clear();
-    				Spectators.clear();
     			}
+				IngameUsers.clear();
+				ReadyUsers.clear();
+				Spectators.clear();
     		}
     	}
     	} 
@@ -219,9 +230,10 @@ public final class Main implements Listener {
 			{
 				state = 4;
 				main.getLogger().info("TIMES OVER");
-				for (Player player : IngameUsers) {
+				for (Player player : IngameUsers) { //TODO:
 					player.teleport(new Location(Bukkit.getWorld("ImmoParkour"), 1, 226, -1, 91, 2));
 					player.setGameMode(GameMode.ADVENTURE);
+					player.getInventory().clear();
 				}
 			}
 		}
@@ -242,13 +254,29 @@ public final class Main implements Listener {
 					player.setHealth(player.getMaxHealth());
 					player.setGameMode(GameMode.ADVENTURE);
 					player.teleport(Bukkit.getWorld("Lobby").getSpawnLocation());
-					IngameUsers.clear();
-    				ReadyUsers.clear();
 				}
+				IngameUsers.clear();
+				ReadyUsers.clear();
+				main.state = "Lobby";
 			}
 		}
 	}
-    
+   
+   public void onPlayerLeave(PlayerQuitEvent event)
+   {
+	   if (IngameUsers.contains(event.getPlayer())){
+		   IngameUsers.remove(event.getPlayer());
+	   }
+	   
+	   if (Spectators.contains(event.getPlayer())){
+		   Spectators.remove(event.getPlayer());
+	   }
+	   
+	   if (ReadyUsers.contains(event.getPlayer())){
+		   ReadyUsers.remove(event.getPlayer());
+	   }
+   }
+   
    public void removeAllImmortals(Player target){
 	   for (DamageCause cause: DamageCause.values()) {
 		   Bukkit.getPluginCommand("imr").execute(Bukkit.getConsoleSender(), "imr", new String[]{target.getName(), cause.toString()});
@@ -319,12 +347,36 @@ public final class Main implements Listener {
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args){    	
     	main.getLogger().info("CMD");
     	
+    	if (cmd.getName().equalsIgnoreCase("imvision")){
+    		nightvision = !nightvision;
+    		String nvstr = "Bugged";
+    		if (nightvision == true){
+    			nvstr = "Enabled";
+    		}
+    		else
+    		{
+    			nvstr = "Disabled";
+    		}
+    		sender.sendMessage("Immortal NightVision is now " + nvstr);
+    		return true;
+    	}
+    	
     	if (cmd.getName().equalsIgnoreCase("imcreateworld")) {
+    		if (sender instanceof Player){
+    		if (!((Player) sender).hasPermission("immortalized.createworld")){
+    			return false;
+    		}
+    		}
     		World world = Bukkit.createWorld(new WorldCreator("im"));
     		((Player) sender).teleport(world.getSpawnLocation());
     	}
     	
     	if (cmd.getName().equalsIgnoreCase("imunloadworld")) {
+    		if (sender instanceof Player) {
+    		if (!((Player) sender).hasPermission("immortalized.unloadworld")){
+    			return false;
+    		}
+    		}
     		//World world = Bukkit.getWorld("im");
     		try
             {
@@ -341,6 +393,10 @@ public final class Main implements Listener {
     	
     	//IMjoin
     	if (cmd.getName().equalsIgnoreCase("imjoin")) {
+    		if (sender instanceof Player){
+    			return false;
+    		}
+    		
     		if (state == 0){
     			state = 1;
     			for(Player player : Bukkit.getServer().getOnlinePlayers()) {
@@ -349,6 +405,7 @@ public final class Main implements Listener {
     					player.setHealth(player.getMaxHealth());
     					removeAllImmortals(player);
     					player.teleport(new Location(Bukkit.getWorld("ImmoLobby"),0, 65, 0, 0, 0));
+    					player.getInventory().clear();
     					player.setGameMode(GameMode.ADVENTURE);
     					main.getLogger().info("Teleporting players to Lobby");
     					player.sendMessage("You Joined Immortualize. Type /ready if you are ready");
@@ -361,6 +418,7 @@ public final class Main implements Listener {
     	}
     	
     	if (cmd.getName().equalsIgnoreCase("ready")){
+    		//if (((Player) sender).hasPermission("immortalized.ready")){
     		if (state == 1 || state == 2){
     		if (IngameUsers.contains((Player) sender)){
     			if (!ReadyUsers.contains((Player) sender)){
@@ -387,10 +445,20 @@ public final class Main implements Listener {
     		}
 			((Player) sender).sendMessage("You are Not Ingame");
     		return true;
+    		//}
+    		//else
+    		//{
+    		//	return false; //not perm
+    		//}
     	}
     	
     	//IMR
     	if (cmd.getName().equalsIgnoreCase("imr")) {
+    		if (sender instanceof Player){
+    		if (!((Player) sender).hasPermission("immortalized.imr")){
+    			return true;
+    		}
+    		}
     		if(args[0].equalsIgnoreCase("all")){
     	    	for(Player player : Bukkit.getServer().getOnlinePlayers()) {
     	    		if (args[1] == "FIRE" || args[1] == "FIRE_TICK" || args[1] == "LAVA"){
@@ -409,7 +477,7 @@ public final class Main implements Listener {
     		if (target == null)
     		{
     			sender.sendMessage(args[0] + " is Dead");
-    			return false;
+    			return true;
     		}
     		
     		if (args[1] == "FIRE" || args[1] == "FIRE_TICK" || args[1] == "LAVA"){
@@ -447,11 +515,6 @@ public final class Main implements Listener {
 				}
 			}
 		}
-    }
-    
-    @EventHandler
-    public void onPlayerInteract(PlayerInteractEvent event){
-    	main.getLogger().info("YOU FUCKING WORK :P");
     }
     
     public void joinSpectator(Player player){
