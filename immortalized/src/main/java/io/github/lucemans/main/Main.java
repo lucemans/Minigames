@@ -6,7 +6,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
-import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.Sign;
 import org.bukkit.command.Command;
@@ -17,21 +16,21 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import io.github.lucemans.config.SLAPI;
-import io.github.lucemans.ui.HelloWorldMenu;
-import io.github.lucemans.ui.UIManager;
 
 public final class Main extends JavaPlugin implements Listener 
 {	
-	public static io.github.lucemans.immortalized.Main immo;
-	public static io.github.lucemans.bookofwritings.Main bow;
-	public static io.github.lucemans.config.Main config;
-	public static io.github.lucemans.config.SLAPI slapi;
-	public UIManager ui;
+	public io.github.lucemans.immortalized.Main immo;
+	public io.github.lucemans.bookofwritings.Main bow;
+	public io.github.lucemans.config.Main config;
+	public io.github.lucemans.config.SLAPI slapi;
+	public io.github.lucemans.main.ScoreboardManager SBM;
+	public static io.github.lucemans.main.InventoryManager im;
 	
 	public String state = "Lobby";
 	public Inventory voteInv;
@@ -49,6 +48,9 @@ public final class Main extends JavaPlugin implements Listener
 		bow = new io.github.lucemans.bookofwritings.Main(this);
 		config = new io.github.lucemans.config.Main(this);
 		slapi = new io.github.lucemans.config.SLAPI(this);
+		SBM = new io.github.lucemans.main.ScoreboardManager(this);
+		im = new io.github.lucemans.main.InventoryManager(this);
+		
 		SLAPI.loadBalances();
 		Bukkit.getPluginManager().registerEvents(this, this);
 		
@@ -66,7 +68,11 @@ public final class Main extends JavaPlugin implements Listener
 			player.getPlayer().setGameMode(GameMode.ADVENTURE);
 			player.setSaturation(1000f);
 			player.getPlayer().setFoodLevel(20);
+			player.setLevel(0);
+			player.setExp(1f);
 			player.getPlayer().performCommand("spawnpoint");
+			player.setMetadata("vote", new FixedMetadataValue(this, ""));
+			SBM.update(player);
         }
     }
 	
@@ -80,6 +86,7 @@ public final class Main extends JavaPlugin implements Listener
 	{
 		int immoint = 0;
 		int vengfullint = 0;
+		int switchint = 0;
 		String vote = "";
 		for(Player player : Bukkit.getOnlinePlayers())
 		{
@@ -93,10 +100,14 @@ public final class Main extends JavaPlugin implements Listener
 				{
 					vengfullint = vengfullint + 1;
 				}
+				if(player.getMetadata("vote").get(0).asString().equals("switchstr"))
+				{
+					switchint = switchint + 1;
+				}
 			}
 		}
-		int num = getLargestKey(immoint, vengfullint);
-		++num;
+		int num = getLargestKey(immoint, vengfullint, switchint);
+		getLogger().info(num + " !");
 		if(num == 1)
 		{
 			vote = "immostr";
@@ -104,6 +115,9 @@ public final class Main extends JavaPlugin implements Listener
 		if(num == 2)
 		{
 			vote = "vengfullstr";
+		}
+		if(num == 3){
+			vote = "switchstr";
 		}
 		return vote;
 	}
@@ -133,11 +147,6 @@ public final class Main extends JavaPlugin implements Listener
 				Sign sign = (Sign) block.getState();
 				playerRightClickSign(player, sign);
 			}
-			if (block.getState().getType().equals(Material.BEACON)){
-				HelloWorldMenu menu = new HelloWorldMenu(this);
-				ui.showMenu(player, menu);
-				event.setCancelled(true);
-			}
 		}
 	}
 	
@@ -146,7 +155,7 @@ public final class Main extends JavaPlugin implements Listener
 		if (player.hasMetadata("vote")){
 		if (player.getMetadata("vote").get(0).asString().equals(string))
 		{
-			player.removeMetadata("vote", this);
+			player.setMetadata("vote", new FixedMetadataValue(this, ""));
 			player.sendMessage("you changed your mind");
 			return;
 		}
@@ -177,6 +186,10 @@ public final class Main extends JavaPlugin implements Listener
 		{
 			vote(player, "vengfullstr");
 		}
+		if(line2.equals("Switching Sides"))
+		{
+			vote(player, "switchstr");
+		}
 		if(line2.equals("topvotes")){
 			player.sendMessage(getVotes());
 		}
@@ -191,22 +204,45 @@ public final class Main extends JavaPlugin implements Listener
 	
 	public int getLargestKey(int ... nums)//3 5 8 1 //TODO this is broken :| just returning Immortal
 	{
-		/*
 		int max = 0;
 		int num = 0;
-		for(int i: nums)
+		for(int i = 0; i < nums.length; i++)
 		{
 			if(nums[i] > max)
 			{
+				getLogger().info(i + ":hey " + nums[i] + " is higher than " + max);
 				max = nums[i];
 				num = i;
 			}
-			i += 1;
 		}
+		num++;
 		return num;
-		*/
+	}
+	
+	@EventHandler
+	public void onPlayerLeave(PlayerQuitEvent event){
+		//immo.onPlayerLeave(event);
 		
-		return 0;
+		   getLogger().info("LEFT2");
+		   if (immo.IngameUsers.contains(event.getPlayer())){
+			   getLogger().info("removed ingame");
+			   immo.IngameUsers.remove(event.getPlayer());
+		   }
+		   
+		   if (immo.Spectators.contains(event.getPlayer())){
+			   getLogger().info("spec removed");
+			   immo.Spectators.remove(event.getPlayer());
+		   }
+		   
+		   if (immo.ReadyUsers.contains(event.getPlayer())){
+			   getLogger().info("redy removed");
+			   immo.ReadyUsers.remove(event.getPlayer());
+		   }
+		   
+		   if (immo.Finished.contains(event.getPlayer())){
+			   getLogger().info("finish removed");
+			   immo.Finished.remove(event.getPlayer());
+		   }
 	}
 	
 	@Override
@@ -242,6 +278,12 @@ public final class Main extends JavaPlugin implements Listener
 			return true;
 		}
 		
+		boolean InventoryManagerreturn = im.onCommand(sender, cmd, label, args);
+		
+		if (InventoryManagerreturn == true) {
+			return true;
+		}
+		
 		sender.sendMessage("Command Execution Failed");
 		return true;
 		
@@ -253,6 +295,8 @@ public final class Main extends JavaPlugin implements Listener
 			io.github.lucemans.config.Main.bal.put(event.getPlayer().getName(), 200D);
 		}
 		
+		SBM.update(event.getPlayer());
+		
 		//TELEPORTS
 		if (state.equals("Lobby")){
 			event.getPlayer().teleport(Bukkit.getWorld("Lobby").getSpawnLocation());
@@ -261,6 +305,8 @@ public final class Main extends JavaPlugin implements Listener
 			event.getPlayer().setGameMode(GameMode.ADVENTURE);
 			event.getPlayer().setSaturation(1000f);
 			event.getPlayer().setFoodLevel(20);
+			event.getPlayer().setLevel(0);
+			event.getPlayer().setExp(1f);
 			event.getPlayer().performCommand("spawnpoint");
 		}
 		if (state.equals("Immortalized")){
@@ -273,6 +319,7 @@ public final class Main extends JavaPlugin implements Listener
 		//GET VOTES -Start
 		int immoint = 0;
 		int vengfullint = 0;
+		int switchint = 0;
 		for(Player player : Bukkit.getOnlinePlayers())
 		{
 			if(player.hasMetadata("vote"))
@@ -284,6 +331,10 @@ public final class Main extends JavaPlugin implements Listener
 				if(player.getMetadata("vote").get(0).asString().equals("vengfullstr"))
 				{
 					vengfullint = vengfullint + 1;
+				}
+				if(player.getMetadata("vote").get(0).asString().equals("switchstr"))
+				{
+					switchint = switchint + 1;
 				}
 			}
 		}
@@ -306,6 +357,14 @@ public final class Main extends JavaPlugin implements Listener
 			sign.update();
 			sign.update(true);
 		}
+		
+		if (Bukkit.getWorld("Lobby").getBlockAt(new Location(Bukkit.getWorld("Lobby"), -19, 67, 3)).getState() instanceof Sign) {
+			//getLogger().info("SIGN");
+			Sign sign = ((Sign) Bukkit.getWorld("Lobby").getBlockAt(new Location(Bukkit.getWorld("Lobby"), -19, 67, 3)).getState());
+			sign.setLine(2, "VOTES: " + switchint);
+			sign.update();
+			sign.update(true);
+		}
 		//End
 		
 		online_players = 0;
@@ -321,6 +380,8 @@ public final class Main extends JavaPlugin implements Listener
 					player.getPlayer().setGameMode(GameMode.ADVENTURE);
 					player.setSaturation(1000f);
 					player.getPlayer().setFoodLevel(20);
+					player.setLevel(0);
+					player.getPlayer().setExp(1f);
 					player.getPlayer().performCommand("spawnpoint");
 					}
 				}
@@ -330,9 +391,9 @@ public final class Main extends JavaPlugin implements Listener
 			}
 		}
 		
-		if (immoint + vengfullint == online_players && state == "Lobby" && online_players > 1){
-			int num = getLargestKey(immoint, vengfullint);
-			++num;
+		if (immoint + vengfullint + switchint == online_players && state == "Lobby" && online_players > 1){
+			int num = getLargestKey(immoint, vengfullint, switchint);
+			getLogger().info(num + " !");
 			if(num == 1)
 			{
 				//JOIN IMORTALIZED
@@ -348,6 +409,10 @@ public final class Main extends JavaPlugin implements Listener
 			if(num == 2)
 			{
 				//"vengfullstr"; JOIN
+			}
+			if(num == 3)
+			{
+				//"switch" join;
 			}
 		}
 	}//End Tick event

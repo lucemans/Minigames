@@ -37,6 +37,7 @@ public final class Main implements Listener {
 	public ArrayList<Player> IngameUsers = new ArrayList<Player>();
 	public ArrayList<Player> ReadyUsers = new ArrayList<Player>();
 	public ArrayList<Player> Spectators = new ArrayList<Player>();
+	public ArrayList<Player> Finished = new ArrayList<Player>();
 	
 	public static io.github.lucemans.main.Main main;
 	
@@ -85,13 +86,89 @@ public final class Main implements Listener {
     			player.setSaturation(9.5f);
     			player.setGlowing(false);
     			
+    			/*
     			if (state == 8 && player.getName().equals(gameWinner)){
     				player.setGlowing(true);
     			}
+    			*/
     			
-    			if (state == 7){
+    			//TODO: WAIT FOR USER
+    			if (state == 7 || state == 8){
     				if (player.getLocation().getBlockX() >= 125 && player.getLocation().getBlockX() <= 127 && player.getWorld().equals(Bukkit.getWorld("ImmoParkour")) && !Spectators.contains(player) && IngameUsers.contains(player)) {
     					player.teleport(new Location(player.getWorld(), 130, 123, -2, 90, 2));
+    					Finished.add(player);
+    					
+    					if (state == 7){
+    						//TIMER
+    						state = 8;
+    						for (Player p : IngameUsers){
+    							p.sendMessage("15 seconds till game end");
+    						}
+    						new BukkitRunnable()
+    	    				{
+    	    					@Override
+    	    					public void run()
+    	    					{
+    	    						for (Player p : IngameUsers){
+    	    							p.sendMessage("10 seconds till game end");
+    	    						}
+    	    						new BukkitRunnable()
+    	    	    				{
+    	    	    					@Override
+    	    	    					public void run()
+    	    	    					{
+    	    	    						for (Player p : IngameUsers){
+    	    	    							p.sendMessage("5 seconds till game end");
+    	    	    						}
+    	    	    						new BukkitRunnable()
+    	    	    	    				{
+    	    	    	    					@Override
+    	    	    	    					public void run()
+    	    	    	    					{
+    	    	    	    						for (Player p : IngameUsers){
+    	    	    	    							p.sendMessage("Game Ended");
+    	    	    	    						}
+    	    	    	    						
+    	    	    	    						Player highest = null;
+    	    	    	    						
+    	    	    	    						for (Player p : Finished){
+    	    	    	    							if (highest == null){
+    	    	    	    								highest = p;
+    	    	    	    							}
+    	    	    	    							else
+    	    	    	    							{
+    	    	    	    								if (p.getHealth() > highest.getHealth()){
+    	    	    	    									highest = p;
+    	    	    	    								}
+    	    	    	    								if (p.getHealth() == highest.getHealth()){
+    	    	    	    									highest = p;
+    	    	    	    								}
+    	    	    	    							}
+    	    	    	    						}
+    	    	    	    						
+    	    	    	    						gameWinner = highest.getName();
+    	    	    	    						
+    	    	    	        					time_endleft = 10;
+    	    	    	        					state = 9;
+    	    	    	        					Bukkit.broadcastMessage(player.getName() + " Won the Game");
+    	    	    	        					for (Player target : IngameUsers){
+    	    	    	        						if (!target.getName().equals(player.getName())){
+    	    	    	        							if (!Finished.contains(target)){
+    	    	    	        							target.setGameMode(GameMode.ADVENTURE);
+    	    	    	        							target.setHealth(target.getMaxHealth());
+    	    	    	        							target.teleport(player.getLocation());
+    	    	    	        							}
+    	    	    	        						}
+    	    	    	        					}//EMD
+    	    	    	    					}
+    	    	    	    				}.runTaskLater(main, 5*20);
+    	    	    					}
+    	    	    				}.runTaskLater(main, 5*20);
+    	    					}
+    	    				}.runTaskLater(main, 5*20);
+    					}
+    					
+    					/*//TODO: WIN
     					time_endleft = 10;
     					state = 8;
     					Bukkit.broadcastMessage(player.getName() + " Won the Game");
@@ -103,6 +180,7 @@ public final class Main implements Listener {
     							target.teleport(player.getLocation());
     						}
     					}
+    					*/
     				}
     			}
     			
@@ -195,7 +273,7 @@ public final class Main implements Listener {
     			main.getLogger().info("All players Succesfully Arived");
     		}
     	}
-    	if (state == 7){
+    	if (state == 7 || state == 8){
     		if (l == IngameUsers.size()){
     			state = 0; //EVERYONE DIED
     			for (Player target : IngameUsers){
@@ -209,11 +287,28 @@ public final class Main implements Listener {
 				IngameUsers.clear();
 				ReadyUsers.clear();
 				Spectators.clear();
+				Finished.clear();
     		}
     	}
     	} 
     	
-
+		if (IngameUsers.size() <= 1 && state > 0){
+			main.getLogger().info("USR");
+			state = 0;
+			for (Player p : main.getServer().getOnlinePlayers()) {
+				p.sendMessage("The Game has ended due to people that are too afraid and left :(..... sorry for this problem");
+				main.getLogger().info("send msg to " + p.getName());
+				removeAllImmortals(p);
+				p.setGlowing(false);
+				p.setHealth(p.getMaxHealth());
+				p.setGameMode(GameMode.ADVENTURE);
+				p.teleport(Bukkit.getWorld("Lobby").getSpawnLocation());
+			}
+			IngameUsers.clear();
+			ReadyUsers.clear();
+			Finished.clear();
+			main.state = "Lobby";
+		}
     }
     
    protected void secondTimer(){ 
@@ -224,7 +319,22 @@ public final class Main implements Listener {
 				target.setExp(1f);
 				target.setLevel(time_left);
 				//target.sendMessage(time_left + " Left");
-		}
+			}
+			if (IngameUsers.size() <= 1){
+					state = 0;
+					for (Player player : IngameUsers) {
+						player.sendMessage("The Game has ended due to people that are too afraid and left :(..... sorry for this problem");
+						removeAllImmortals(player);
+						player.setGlowing(false);
+						player.setHealth(player.getMaxHealth());
+						player.setGameMode(GameMode.ADVENTURE);
+						player.teleport(Bukkit.getWorld("Lobby").getSpawnLocation());
+					}
+					IngameUsers.clear();
+					ReadyUsers.clear();
+					Finished.clear();
+					main.state = "Lobby";
+			}
 		}
 			else
 			{
@@ -237,7 +347,7 @@ public final class Main implements Listener {
 				}
 			}
 		}
-		if (state == 8){
+		if (state == 9){
 			if (time_endleft > 0){
 				time_endleft -= 1;
 			for (Player target : IngameUsers) {
@@ -257,6 +367,7 @@ public final class Main implements Listener {
 				}
 				IngameUsers.clear();
 				ReadyUsers.clear();
+				Finished.clear();
 				main.state = "Lobby";
 			}
 		}
@@ -264,6 +375,7 @@ public final class Main implements Listener {
    
    public void onPlayerLeave(PlayerQuitEvent event)
    {
+	   main.getLogger().info("LEFT");
 	   if (IngameUsers.contains(event.getPlayer())){
 		   IngameUsers.remove(event.getPlayer());
 	   }
@@ -274,6 +386,10 @@ public final class Main implements Listener {
 	   
 	   if (ReadyUsers.contains(event.getPlayer())){
 		   ReadyUsers.remove(event.getPlayer());
+	   }
+	   
+	   if (Finished.contains(event.getPlayer())){
+		   Finished.remove(event.getPlayer());
 	   }
    }
    

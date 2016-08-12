@@ -29,3 +29,6 @@ commands:
    bypass:
       description: .
       usage: /bypass
+   menu:
+      description: .
+      usage: /menu
