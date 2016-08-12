@@ -46,12 +46,14 @@ public final class Main extends JavaPlugin implements Listener
     {
 		immo = new io.github.lucemans.immortalized.Main(this);
 		bow = new io.github.lucemans.bookofwritings.Main(this);
+
 		config = new io.github.lucemans.config.Main(this);
 		slapi = new io.github.lucemans.config.SLAPI(this);
 		SBM = new io.github.lucemans.main.ScoreboardManager(this);
 		im = new io.github.lucemans.main.InventoryManager(this);
 		
 		SLAPI.loadBalances();
+		
 		Bukkit.getPluginManager().registerEvents(this, this);
 		
 		getLogger().info("MAIN 2nd WORKS");
@@ -417,4 +419,3 @@ public final class Main extends JavaPlugin implements Listener
 		}
 	}//End Tick event
 }//End of Class
-
